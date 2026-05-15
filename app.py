@@ -73,8 +73,5 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(main_bp)
 
 if __name__ == "__main__":
-    from waitress import serve
-
-    host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", 5002))
-    serve(app, host=host, port=port)
+    app.run(host="0.0.0.0", port=port, debug=False)

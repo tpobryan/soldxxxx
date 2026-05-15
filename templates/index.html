@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sold Lookup</title>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --border: #dde3ee;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #0e7490;
+      --accent-hover: #0c6680;
+      --accent-light: #e0f2f7;
+      --danger: #dc2626;
+      --radius: 14px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .wrap { max-width: 780px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.75rem;
+    }
+    h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
+    h1 span { color: var(--accent); }
+    .logout-form { display: inline; }
+    .logout-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .logout-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .field { margin-bottom: 1.1rem; }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+    textarea, input[type="number"], select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 0.93rem;
+      font-family: inherit;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    textarea:focus, input[type="number"]:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 140px; font-family: "Menlo", "Courier New", monospace; font-size: 0.82rem; }
+    .row { display: flex; gap: 1rem; }
+    .row .field { flex: 1; }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.1rem;
+    }
+    .toggle-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+    .toggle-row label { margin: 0; text-transform: none; font-size: 0.9rem; font-weight: 500; color: var(--text); letter-spacing: 0; }
+    .btn {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 0.65rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--accent-light); border-color: var(--accent); }
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .results-header h2 { font-size: 1rem; font-weight: 600; }
+    .badge {
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 99px;
+    }
+    #output {
+      font-family: "Menlo", "Courier New", monospace;
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 60px;
+      color: var(--text);
+    }
+    .empty { color: var(--muted); font-style: italic; font-family: inherit; font-size: 0.9rem; }
+    .error-msg { color: var(--danger); font-family: inherit; font-size: 0.9rem; }
+    .actions { display: flex; gap: 0.6rem; align-items: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Sold <span>Lookup</span></h1>
+      {% if auth_enabled %}
+      <form class="logout-form" action="/logout" method="post">
+        {{ csrf_input }}
+        <button class="logout-btn" type="submit">Log out</button>
+      </form>
+      {% endif %}
+    </header>
+
+    <div class="card">
+      <div class="field">
+        <label for="textInput">Paste log text</label>
+        <textarea id="textInput" placeholder="Paste your sold log here..."></textarea>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="numberInput">Sold number</label>
+          <input type="number" id="numberInput" placeholder="e.g. 5" min="0">
+        </div>
+        <div class="field">
+          <label for="sortOption">Sort by</label>
+          <select id="sortOption">
+            <option value="unsorted">Unsorted (original order)</option>
+            <option value="random">Random</option>
+            <option value="alphabetical">Alphabetical</option>
+          </select>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="uniqueOnly" checked>
+        <label for="uniqueOnly">Show unique names only</label>
+      </div>
+      <button class="btn" id="processBtn" onclick="processText()">Find Names</button>
+    </div>
+
+    <div class="card">
+      <div class="results-header">
+        <h2>Results</h2>
+        <div class="actions">
+          <span class="badge" id="countBadge" style="display:none"></span>
+          <button class="btn btn-secondary" id="copyBtn" style="display:none; padding: 0.35rem 0.85rem; font-size: 0.82rem;" onclick="copyResults()">Copy</button>
+        </div>
+      </div>
+      <div id="output"><span class="empty">Results will appear here.</span></div>
+    </div>
+  </div>
+
+  <script>
+    async function processText() {
+      const btn = document.getElementById("processBtn");
+      btn.disabled = true;
+      btn.textContent = "Processing…";
+
+      const formData = new FormData();
+      formData.append("text", document.getElementById("textInput").value);
+      formData.append("number", document.getElementById("numberInput").value);
+      formData.append("sort_option", document.getElementById("sortOption").value);
+      formData.append("unique_only", document.getElementById("uniqueOnly").checked);
+      formData.append("csrf_token", "{{ csrf_token }}");
+
+      try {
+        const response = await fetch("/process", { method: "POST", body: formData });
+        const result = await response.json();
+        const output = document.getElementById("output");
+        const badge = document.getElementById("countBadge");
+        const copyBtn = document.getElementById("copyBtn");
+
+        if (result.error) {
+          output.innerHTML = `<span class="error-msg">${result.error}</span>`;
+          badge.style.display = "none";
+          copyBtn.style.display = "none";
+        } else if (result.names.length === 0) {
+          output.innerHTML = `<span class="empty">No names found for that sold number.</span>`;
+          badge.style.display = "none";
+          copyBtn.style.display = "none";
+        } else {
+          output.textContent = result.names.join("\n");
+          badge.textContent = `${result.count} name${result.count !== 1 ? "s" : ""}`;
+          badge.style.display = "inline";
+          copyBtn.style.display = "inline-block";
+        }
+      } catch {
+        document.getElementById("output").innerHTML = `<span class="error-msg">Request failed. Is the server running?</span>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Find Names";
+      }
+    }
+
+    function copyResults() {
+      const text = document.getElementById("output").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("copyBtn");
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "Copy"; }, 1500);
+      });
+    }
+  </script>
+</body>
+</html>
